@@ -1,0 +1,105 @@
+```{r}
+#load data
+library(lmtest)
+library(leaps)
+library(Stat2Data)
+bk.data <- read.csv(file = "~/SC321/Reports/Report 4/birdkeeping.csv")
+attach(bk.data)
+bk.df <- data.frame(bk.data)
+print(bk.df)
+```
+```{r}
+#creating table to see how many have lung cancer and are bird keepers
+my.table <- table(bk.df$BK, bk.df$LC)
+my.table
+```
+observations:
+
+What are the odds of having a bird? 67/80
+What are the odds of having a bird if you have lung cancer? 33/16
+What are the odds of having a bird if you don't have lung cancer? 34/64
+What are the odds ratio for having a bird comparing those who have and don't have lung cancer? (33/16)/(34/64)
+```{r}
+#do the math
+yesbird <- 67/80
+birdcancer <- 33/16
+birdnocancer <- 34/64
+oddsRatio <- (33/34)/(16/64)
+yesbird
+birdcancer
+birdnocancer
+oddsRatio
+```
+This means that those who have lung cancer are 3.88 times more likely to have a bird than those who do not have lung cancer.
+
+Linear models
+```{r}
+bk.df$LC_ind <- as.numeric(bk.df$LC == "LUNGCANCER")
+bk.df$BK_ind <- as.numeric(bk.df$BK == "BIRD")
+main.glm <- glm(bk.df$LC_ind ~ bk.df$BK_ind + as.factor(bk.df$SEX) + as.factor(bk.df$SS) + bk.df$AG + bk.df$YR + bk.df$CD, family="binomial")
+#str(bk.df)
+summary(main.glm)
+```
+```{r}
+step(main.glm)
+```
+```{r}
+fitMain.glm <- glm(bk.df$LC_ind ~ bk.df$BK_ind + bk.df$YR, family="binomial")
+#str(bk.df)
+summary(fitMain.glm)
+```
+```{r}
+lrtest(main.glm, fitMain.glm)
+```
+write description:
+
+Since this p-value is not less than .05, we will fail to reject the null hypothesis.
+
+This means the model and the fitModel fit the data equally well. Thus, we should use the fitModel because the additional predictor variables in the first model don’t offer a significant improvement in fit.
+
+
+
+
+```{r}
+library(rpart)
+bk.rt <- rpart(bk.df$LC_ind ~ bk.df$BK_ind + bk.df$YR)
+par(xpd = TRUE)
+plot(bk.rt)
+text(bk.rt, pretty=0)
+bk.rt
+printcp(bk.rt)
+```
+```{r}
+better.glm <- glm(bk.df$LC_ind ~ bk.df$BK_ind + bk.df$YR + I(bk.df$YR^2), family="binomial")
+#str(bk.df)
+summary(better.glm)
+```
+```{r}
+step(better.glm)
+```
+
+
+```{r}
+#creating table to see how many have lung cancer and are bird keepers with new model (odds ratio)
+exp(fitMain.glm$coefficients[-1])
+```
+This means that those who do have lung cancer are 4.37 times more likely to have a bird than those who do not have lung cancer.
+
+```{r}
+simple.glm <- glm(bk.df$LC_ind ~ bk.df$BK_ind, family = "binomial")
+summary(simple.glm)
+```
+
+```{r}
+# Confidence interval for crude OR
+exp(confint(simple.glm, level = .95))
+# Confidence interval for adjusted OR
+exp(confint(fitMain.glm, level = .95))
+```
+
+
+
+
+
+
+
